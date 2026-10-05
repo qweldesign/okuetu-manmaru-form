@@ -134,9 +134,8 @@ export const SCHEMA: Schema = {
           fields: [
             {
               id: 'exchange_items', type: 'checks', label: '興味のあること', required: true,
-              options: opts([['green', 'グリーンツーリズムを体験したい'], ['rural_life', '田舎暮らしを体験したい'], ['event', 'イベント情報を知りたい'], ['visit', '定住に向けて大野市を訪問したい'], ['sightseeing', '一度観光で訪れてみたい']]),
+              options: opts([['green', 'グリーンツーリズムを体験したい'], ['rural_life', '田舎暮らしを体験したい'], ['event', 'イベント情報を知りたい'], ['sightseeing', '一度観光で訪れてみたい']]),
             },
-            { id: 'visit_ym', type: 'month', label: '訪問を希望する時期', show: { field: 'exchange_items', includes: 'visit' }, width: 'half' },
           ],
         },
         {
@@ -158,6 +157,18 @@ export const SCHEMA: Schema = {
               min: 1, max: 3, rowLabel: '候補', addLabel: '候補日時を追加',
               hint: '現在はGoogle Meetのみで実施しています。候補を複数いただけると調整がスムーズです。',
               fields: [{ id: 'dt', type: 'datetime-local', label: '日時', required: true }],
+            },
+          ],
+        },
+        {
+          id: 'sec_visit', type: 'section', label: '現地視察',
+          fields: [
+            { id: 'site_visit', type: 'radio', label: '現地視察を希望しますか', required: true, options: opts([['yes', '希望する'], ['no', '希望しない']]) },
+            {
+              id: 'visit_dates', type: 'repeater', label: 'ご都合のよい日', show: { field: 'site_visit', equals: 'yes' },
+              min: 1, max: 3, rowLabel: '候補', addLabel: '候補日を追加',
+              hint: '候補を複数いただけると調整がスムーズです。',
+              fields: [{ id: 'date', type: 'date', label: '日付', required: true }],
             },
           ],
         },
