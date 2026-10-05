@@ -186,6 +186,11 @@ export const SCHEMA: Schema = {
           hint: '「来年の春ごろ、1週間くらい」など、わかる範囲で構いません。',
         },
         {
+          id: 'workstay_jobs', type: 'checks', label: '体験したい仕事', show: hasWork, required: hasWork,
+          hint: '複数選べます。',
+          options: opts([['farming', '農業'], ['forestry', '林業'], ['instructor', '体験インストラクター']]),
+        },
+        {
           id: 'house_purpose', type: 'checks', label: 'まんまるハウスの利用目的', show: hasHouse, required: hasHouse,
           options: opts([['inspection', '現地視察・相談'], ['workstay', 'ワークステイ'], ['ecotour', 'エコツアー'], ['other', 'その他']]),
         },
