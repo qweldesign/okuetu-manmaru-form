@@ -1,0 +1,73 @@
+@import "tailwindcss";
+
+:root {
+  color-scheme: light dark;
+  --mf-bg: #f3f6f2;
+  --mf-surface: #ffffff;
+  --mf-ink: #1f2b25;
+  --mf-muted: #56675e;
+  --mf-line: #d3dcd5;
+  --mf-accent: #2c6657;
+  --mf-accent-ink: #ffffff;
+  --mf-accent-soft: #e2eee8;
+  --mf-sun: #c98a1e;
+  --mf-sun-soft: #fbf1dc;
+  --mf-danger: #b3261e;
+  --mf-danger-soft: #fcedec;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --mf-bg: #131a16;
+    --mf-surface: #1b241f;
+    --mf-ink: #e4ebe6;
+    --mf-muted: #9eb1a6;
+    --mf-line: #2f3c35;
+    --mf-accent: #7fc4ae;
+    --mf-accent-ink: #0f1d18;
+    --mf-accent-soft: #213430;
+    --mf-sun: #e3af4e;
+    --mf-sun-soft: #2e2716;
+    --mf-danger: #f2b8b5;
+    --mf-danger-soft: #3a1f1e;
+  }
+}
+
+@theme inline {
+  --color-bg: var(--mf-bg);
+  --color-surface: var(--mf-surface);
+  --color-ink: var(--mf-ink);
+  --color-muted: var(--mf-muted);
+  --color-line: var(--mf-line);
+  --color-accent: var(--mf-accent);
+  --color-accent-ink: var(--mf-accent-ink);
+  --color-accent-soft: var(--mf-accent-soft);
+  --color-sun: var(--mf-sun);
+  --color-sun-soft: var(--mf-sun-soft);
+  --color-danger: var(--mf-danger);
+  --color-danger-soft: var(--mf-danger-soft);
+}
+
+@theme {
+  --font-round: "Zen Maru Gothic", "Hiragino Maru Gothic ProN", "BIZ UDPGothic", sans-serif;
+  --font-body: "BIZ UDPGothic", "Hiragino Sans", "Yu Gothic", "Meiryo", sans-serif;
+  --animate-open: open 0.3s ease-out;
+
+  @keyframes open {
+    from { opacity: 0; transform: translateY(-4px); }
+    to { opacity: 1; transform: none; }
+  }
+}
+
+@layer base {
+  body {
+    background-color: var(--color-bg);
+    color: var(--color-ink);
+    font-family: var(--font-body);
+    line-height: 1.8;
+  }
+  :focus-visible {
+    outline: 3px solid var(--color-sun);
+    outline-offset: 2px;
+  }
+}
