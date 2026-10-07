@@ -162,3 +162,9 @@ export interface Payload {
   submittedAt: string;
   data: Values;
 }
+
+/** 通知先の振り分け規則（when に合えば route の担当に知らせる） */
+export interface RouteRule {
+  route: string;
+  when: Condition;
+}

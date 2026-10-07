@@ -12,6 +12,12 @@ export default defineConfig({
       }
     },
   },
+  server: {
+    // api/ の PHP は、PHP の開発サーバー（npm run dev:api）に中継する
+    proxy: {
+      '/api': 'http://localhost:8000',
+    },
+  },
   plugins: [
     react(),
     tailwindcss()

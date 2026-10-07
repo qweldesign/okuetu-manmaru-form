@@ -1,12 +1,15 @@
 {
   "name": "okuetu-manmaru-form",
   "private": true,
-  "version": "0.0.0",
+  "version": "1.0.0",
   "author": "QWEL.DESIGN",
   "license": "MIT",
   "type": "module",
   "scripts": {
     "dev": "vite",
+    "dev:api": "php -S localhost:8000",
+    "schema": "node scripts/export-schema.mjs",
+    "prebuild": "npm run schema",
     "build": "tsc -b && vite build",
     "lint": "eslint .",
     "preview": "vite preview"

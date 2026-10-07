@@ -1,9 +1,9 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import type { Errors, FieldValue, Payload, Values } from './form/types.ts';
 import { PURPOSES, SCHEMA } from './form/schema.ts';
-import { buildPayload, effectiveValues, evalCond, initialValues, syncFirstRows, validateStep } from './form/engine.ts';
+import { buildPayload, effectiveValues, evalCond, initialValues, stepIndexOf, syncFirstRows, validateStep } from './form/engine.ts';
 import { ENABLE_VALIDATION } from './form/config.ts';
-import { submitInquiry } from './form/submit.ts';
+import { SubmitError, submitInquiry } from './form/submit.ts';
 import { domIdOf } from './form/utils.ts';
 import { actionsRow, btnGhost, btnPrimary, panelHeading } from './form/styles.ts';
 import { FieldList } from './components/FieldList.tsx';
@@ -121,7 +121,17 @@ export default function App() {
       setPayload(data);
       setPhase('done');
     } catch (e) {
-      setSendError(e instanceof Error ? e.message : '送信に失敗しました');
+      // サーバーの入力チェックで弾かれたら、該当するステップに戻ってエラーを示す
+      const fieldErrors = e instanceof SubmitError ? e.fieldErrors : {};
+      const first = Object.keys(fieldErrors)[0];
+      const i = first ? stepIndexOf(steps, first) : -1;
+      if (i >= 0) {
+        setPhase('form');
+        setPos(i);
+        showErrors(fieldErrors);
+      } else {
+        setSendError(e instanceof Error ? e.message : '送信できませんでした');
+      }
     } finally {
       setSending(false);
     }

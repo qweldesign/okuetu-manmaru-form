@@ -266,6 +266,13 @@ export function syncFirstRows(schema: Schema, prev: Values, next: Values): Value
   return out;
 }
 
+/** エラーのキー（例: companions.0.name）の項目が含まれるステップの位置。見つからなければ -1 */
+export function stepIndexOf(steps: Step[], key: string): number {
+  const id = key.split('.')[0];
+  const has = (fields: Field[]): boolean => fields.some((f) => f.id === id || (f.type === 'section' && has(f.fields)));
+  return steps.findIndex((s) => has(s.fields));
+}
+
 /** 確認画面用：表示中で入力済みの項目だけを、見出しのまとまりごとに取り出す */
 export function summarize(fields: Field[], eff: Values, values: Values): SummaryEntry[] {
   const out: SummaryEntry[] = [];

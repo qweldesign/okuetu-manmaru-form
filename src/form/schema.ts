@@ -1,6 +1,7 @@
 // フォーム定義。条件（show / required）は JSON で表現できる形にしてあり、
 // PHP 側のサーバー検証でも同じ定義を読み込める想定。
-import type { Condition, Field, Option, Schema, Values } from './types.ts';
+import type { Condition, Field, Option, RouteRule, Schema, Values } from './types.ts';
+import { evalCond } from './engine.ts';
 
 const opts = (rows: [string, string, string?, string?][]): Option[] =>
   rows.map(([value, label, desc, badge]) => ({ value, label, ...(desc && { desc }), ...(badge && { badge }) }));
@@ -38,12 +39,21 @@ export const ROUTES: Record<string, string> = {
   other: 'サイト管理の担当',
 };
 
-/** 送信内容から通知先の担当を求める。ワークステイでまんまるハウスも使う場合は、ハウスの担当にも知らせる */
+/**
+ * 通知先の振り分け規則。条件に合う担当すべてに知らせる。
+ * ワークステイでまんまるハウスも使う場合は、ハウスの担当にも知らせる。
+ * サーバー側（api/）も同じ規則を schema.json 経由で使う。
+ */
+export const ROUTE_RULES: RouteRule[] = [
+  { route: 'relocation', when: hasRelocation },
+  { route: 'workstay', when: hasWork },
+  { route: 'house', when: { any: [hasHouse, { all: [hasWork, { field: 'use_house', equals: 'yes' }] }] } },
+  { route: 'other', when: hasOther },
+];
+
+/** 送信内容から通知先の担当名を求める */
 export function routesFor(data: Values): string[] {
-  const purpose = typeof data.purpose === 'string' ? data.purpose : '';
-  const routes = ROUTES[purpose] ? [ROUTES[purpose]] : [];
-  if (purpose === 'workstay' && data.use_house === 'yes') routes.push(ROUTES.house);
-  return routes;
+  return ROUTE_RULES.filter((r) => evalCond(r.when, data)).map((r) => ROUTES[r.route]);
 }
 
 // ワークステイとまんまるハウスで共通の項目。同じ id を使うので、送信データのキーもそろう
