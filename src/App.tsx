@@ -146,8 +146,10 @@ export default function App() {
         <h1 className="mt-1 mb-3 font-round text-[clamp(28px,6vw,38px)] leading-snug font-bold tracking-wide">
           お問い合わせ・ご相談
         </h1>
-        <p className="max-w-[38em] text-muted">
-          移住のご相談、ワークステイやまんまるハウスのご利用、サイトへのご質問を、このフォームでまとめて受け付けています。選んだ内容に合わせて、必要な質問だけが表示されます。
+        <p className="text-muted">
+          移住のご相談、ワークステイやまんまるハウスのご利用、サイトへのご質問を、
+          <br />このフォームでまとめて受け付けています。
+          <br />選んだ内容に合わせて、必要な質問だけが表示されます。
         </p>
       </header>
 
@@ -204,8 +206,13 @@ export default function App() {
         {phase === 'done' && payload && <Done payload={payload} headingRef={headingRef} onRestart={restart} />}
       </main>
 
-      <footer className="mt-7 text-sm text-muted">
-        フォームがうまく使えない場合は、お電話（0779-67-1117）またはメール（okuechizenmanmarusaito@gmail.com）でもご相談いただけます。
+      <footer className="mt-7 text-sm text-muted text-right">
+        フォームがうまく使えない場合は、
+        <ul>
+          <li>お電話（0779-67-1117）</li>
+          <li>またはメール（welcome@okuetu-manmaru.com）</li>
+        </ul>
+        でもご相談いただけます。
       </footer>
     </div>
   );
