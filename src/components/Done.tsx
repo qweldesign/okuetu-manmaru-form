@@ -1,6 +1,6 @@
 import type { Ref } from 'react';
 import type { Payload } from '../form/types.ts';
-import { ROUTES } from '../form/schema.ts';
+import { routesFor } from '../form/schema.ts';
 import { asString } from '../form/engine.ts';
 import { actionsRow, btnGhost, panelHeading } from '../form/styles.ts';
 
@@ -12,7 +12,7 @@ interface DoneProps {
 
 export function Done({ payload, headingRef, onRestart }: DoneProps) {
   const email = asString(payload.data.email);
-  const route = ROUTES[asString(payload.data.purpose)];
+  const routes = routesFor(payload.data);
   return (
     <div>
       <h2 ref={headingRef} tabIndex={-1} className={panelHeading}>
@@ -25,7 +25,7 @@ export function Done({ payload, headingRef, onRestart }: DoneProps) {
         <>
           <section className="mt-6 border-t border-line pt-5">
             <h3 className="mb-2 font-round text-lg font-bold">通知先（開発時のみ表示）</h3>
-            <p>{route ?? '（目的が未選択）'}</p>
+            <p>{routes.length ? routes.join('、') : '（目的が未選択）'}</p>
           </section>
           <details className="mt-5">
             <summary className="cursor-pointer font-bold text-accent">送信データ（JSON）を見る</summary>

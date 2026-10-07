@@ -1,6 +1,6 @@
 // フォーム定義。条件（show / required）は JSON で表現できる形にしてあり、
 // PHP 側のサーバー検証でも同じ定義を読み込める想定。
-import type { Condition, Option, Schema } from './types.ts';
+import type { Condition, Field, Option, Schema, Values } from './types.ts';
 
 const opts = (rows: [string, string, string?, string?][]): Option[] =>
   rows.map(([value, label, desc, badge]) => ({ value, label, ...(desc && { desc }), ...(badge && { badge }) }));
@@ -18,17 +18,16 @@ const hasRelocation: Condition = { field: 'purpose', equals: 'relocation' };
 const hasWork: Condition = { field: 'purpose', equals: 'workstay' };
 const hasHouse: Condition = { field: 'purpose', equals: 'house' };
 const hasOther: Condition = { field: 'purpose', equals: 'other' };
-const hasStay: Condition = { field: 'purpose', in: ['workstay', 'house'] };
 const notOther: Condition = { not: hasOther };
-const wantsPamphlet: Condition = { field: 'pamphlet', filled: true };
+const wantsMail: Condition = { any: [{ field: 'mail_brochures', filled: true }, { field: 'mail_consultation', filled: true }] };
 const stayFixed: Condition = { field: 'stay_plan', equals: 'fixed' };
 const stayUndecided: Condition = { field: 'stay_plan', equals: 'undecided' };
 const topic = (t: string): Condition => ({ field: 'support_topics', includes: t });
 
 export const PURPOSES = opts([
-  ['relocation', '移住・定住のご相談', '住まい、仕事、暮らしのことなど。まだ迷っている段階でも大丈夫です', 'オンライン相談も可'],
-  ['workstay', 'ワークステイ', '地域に入り込んで、暮らしながら働く'],
-  ['house', 'まんまるハウスの利用', '視察や相談、体験のための滞在'],
+  ['relocation', 'あなた仕立ての移住相談', '住まい、仕事、暮らしのことなど。まだ迷っている段階でも大丈夫です', 'オンライン相談も可'],
+  ['workstay', '越前大野でワークステイ', '地域に入り込んで、暮らしながら働く体験'],
+  ['house', 'まんまるハウスのご利用', '視察・相談・体験・観光のための滞在'],
   ['other', 'ちょっとしたご質問・その他', 'ひとこと聞いてみたいこと、サイトへのご意見など。お気軽にどうぞ'],
 ]);
 
@@ -38,6 +37,49 @@ export const ROUTES: Record<string, string> = {
   house: 'まんまるハウスの担当',
   other: 'サイト管理の担当',
 };
+
+/** 送信内容から通知先の担当を求める。ワークステイでまんまるハウスも使う場合は、ハウスの担当にも知らせる */
+export function routesFor(data: Values): string[] {
+  const purpose = typeof data.purpose === 'string' ? data.purpose : '';
+  const routes = ROUTES[purpose] ? [ROUTES[purpose]] : [];
+  if (purpose === 'workstay' && data.use_house === 'yes') routes.push(ROUTES.house);
+  return routes;
+}
+
+// ワークステイとまんまるハウスで共通の項目。同じ id を使うので、送信データのキーもそろう
+const stayPeriodFields: Field[] = [
+  {
+    id: 'stay_plan', type: 'radio', label: '滞在の日程', required: true,
+    options: opts([['fixed', '希望日が決まっている'], ['undecided', 'まだ決まっていない']]),
+  },
+  { id: 'stay_from', type: 'date', label: '滞在開始の希望日', required: true, width: 'half', show: stayFixed },
+  { id: 'stay_to', type: 'date', label: '滞在終了の希望日', required: true, width: 'half', show: stayFixed },
+  {
+    id: 'stay_rough', type: 'text', label: 'おおよその時期や期間', show: stayUndecided,
+    hint: '「来年の春ごろ、1週間くらい」など、わかる範囲で構いません。',
+  },
+];
+
+const stayDateOrder = { type: 'dateOrder', from: 'stay_from', to: 'stay_to', message: '終了日は開始日より後の日付にしてください' } as const;
+
+const stayNoteField: Field = { id: 'stay_note', type: 'textarea', label: 'ご希望やご質問', rows: 4 };
+
+/** 滞在する方の一覧。verb は「参加」「利用」、person は「参加者」「利用者」 */
+const guestsField = (verb: string, person: string): Field => ({
+  id: 'companions', type: 'repeater', label: `${verb}される方`, min: 1, max: 8,
+  rowLabel: person, firstRowLabel: '代表者', addLabel: `${person}を追加`,
+  firstRow: { relation: 'self' }, firstRowFrom: { name: 'name' },
+  hint: `1人目は代表者の方です。一緒に${verb}される方がいれば追加してください。`,
+  fields: [
+    { id: 'name', type: 'text', label: 'お名前', required: true },
+    { id: 'kana', type: 'text', label: 'ふりがな', required: true },
+    {
+      id: 'relation', type: 'select', label: '代表者との関係', required: true,
+      options: opts([['self', '本人'], ['spouse', '配偶者'], ['child', '子'], ['parent', '親'], ['sibling', '兄弟姉妹'], ['friend', '友人・知人'], ['other', 'その他']]),
+    },
+    { id: 'birthdate', type: 'birthdate', label: '生年月日', required: true, hint: '数字8桁で入力すると、自動で区切ります' },
+  ],
+});
 
 export const SCHEMA: Schema = {
   steps: [
@@ -63,7 +105,7 @@ export const SCHEMA: Schema = {
     {
       id: 'relocation',
       short: '移住相談',
-      title: '移住・定住のご相談',
+      title: 'あなた仕立ての移住相談',
       lead: '大野での暮らしを考えるにあたって、ご希望をお聞かせください。',
       show: hasRelocation,
       fields: [
@@ -124,9 +166,10 @@ export const SCHEMA: Schema = {
               id: 'agri_style', type: 'checks', label: 'どのように関わりたいですか', required: true,
               options: opts([['full', '本格的に取り組みたい'], ['hobby', '余暇として楽しみたい'], ['trial', 'まずは体験してみたい']]),
             },
-            { id: 'agri_full', type: 'radio', label: '本格的に取り組みたい分野', required: true, show: { field: 'agri_style', includes: 'full' }, options: opts([['farm', '農業'], ['forest', '林業'], ['both', '両方']]) },
-            { id: 'agri_hobby', type: 'radio', label: '余暇として楽しみたい分野', required: true, show: { field: 'agri_style', includes: 'hobby' }, options: opts([['farm', '農業'], ['forest', '林業'], ['both', '両方']]) },
-            { id: 'agri_trial', type: 'radio', label: '体験してみたい分野', required: true, show: { field: 'agri_style', includes: 'trial' }, options: opts([['farm', '農業'], ['forest', '林業'], ['both', '両方']]) },
+            {
+              id: 'agri_field', type: 'radio', label: '取り組みたい分野', required: true,
+              options: opts([['farm', '農業'], ['forest', '林業'], ['both', '両方']]),
+            },
           ],
         },
         {
@@ -134,7 +177,7 @@ export const SCHEMA: Schema = {
           fields: [
             {
               id: 'exchange_items', type: 'checks', label: '興味のあること', required: true,
-              options: opts([['green', 'グリーンツーリズムを体験したい'], ['rural_life', '田舎暮らしを体験したい'], ['event', 'イベント情報を知りたい'], ['sightseeing', '一度観光で訪れてみたい']]),
+              options: opts([['green', 'グリーンツーリズムを体験したい'], ['rural_life', '田舎暮らしを体験したい'], ['event', 'イベント情報を知りたい'], ['sightseeing', '一度観光で訪れてみたい'], ['meet_settlers', '先輩移住者の話を聞きたい']]),
             },
           ],
         },
@@ -179,48 +222,42 @@ export const SCHEMA: Schema = {
       ],
     },
     {
-      id: 'stay',
-      short: '滞在',
-      title: 'ワークステイ・まんまるハウスのご利用',
-      lead: '滞在のご希望日程と、一緒に来られる方について教えてください。',
-      show: hasStay,
-      rules: [{ type: 'dateOrder', from: 'stay_from', to: 'stay_to', message: '終了日は開始日より後の日付にしてください' }],
+      id: 'workstay',
+      short: 'ワークステイ',
+      title: '越前大野でワークステイ',
+      lead: '滞在のご希望日程と、一緒に参加される方について教えてください。',
+      show: hasWork,
+      rules: [stayDateOrder],
       fields: [
+        ...stayPeriodFields,
         {
-          id: 'stay_plan', type: 'radio', label: '滞在の日程', required: true,
-          options: opts([['fixed', '希望日が決まっている'], ['undecided', 'まだ決まっていない']]),
-        },
-        { id: 'stay_from', type: 'date', label: '滞在開始の希望日', required: true, width: 'half', show: stayFixed },
-        { id: 'stay_to', type: 'date', label: '滞在終了の希望日', required: true, width: 'half', show: stayFixed },
-        {
-          id: 'stay_rough', type: 'text', label: 'おおよその時期や期間', show: stayUndecided,
-          hint: '「来年の春ごろ、1週間くらい」など、わかる範囲で構いません。',
-        },
-        {
-          id: 'workstay_jobs', type: 'checks', label: '体験したい仕事', show: hasWork, required: hasWork,
+          id: 'workstay_jobs', type: 'checks', label: '体験したい仕事', required: true,
           hint: '複数選べます。',
-          options: opts([['farming', '農業'], ['forestry', '林業'], ['instructor', '体験インストラクター']]),
+          options: opts([['farming', '農業'], ['forest_care', '森林整備']]),
         },
         {
-          id: 'house_purpose', type: 'checks', label: 'まんまるハウスの利用目的', show: hasHouse, required: hasHouse,
-          options: opts([['inspection', '現地視察・相談'], ['workstay', 'ワークステイ'], ['ecotour', 'エコツアー'], ['other', 'その他']]),
+          id: 'use_house', type: 'radio', label: '滞在にまんまるハウスを利用しますか', required: true,
+          options: opts([['yes', '利用する'], ['no', '利用しない']]),
         },
+        guestsField('参加', '参加者'),
+        stayNoteField,
+      ],
+    },
+    {
+      id: 'house',
+      short: 'ハウス利用',
+      title: 'まんまるハウスのご利用',
+      lead: 'ご利用のご希望日程と、利用される方について教えてください。',
+      show: hasHouse,
+      rules: [stayDateOrder],
+      fields: [
+        ...stayPeriodFields,
         {
-          id: 'companions', type: 'repeater', label: '参加される方', min: 1, max: 8,
-          rowLabel: '参加者', firstRowLabel: '代表者', addLabel: '参加者を追加',
-          firstRow: { relation: 'self' }, firstRowFrom: { name: 'name' },
-          hint: '1人目は代表者の方です。一緒に来られる方がいれば追加してください。',
-          fields: [
-            { id: 'name', type: 'text', label: 'お名前', required: true },
-            { id: 'kana', type: 'text', label: 'ふりがな', required: true },
-            {
-              id: 'relation', type: 'select', label: '代表者との関係', required: true,
-              options: opts([['self', '本人'], ['spouse', '配偶者'], ['child', '子'], ['parent', '親'], ['sibling', '兄弟姉妹'], ['friend', '友人・知人'], ['other', 'その他']]),
-            },
-            { id: 'birthdate', type: 'birthdate', label: '生年月日', required: true, hint: '数字8桁で入力すると、自動で区切ります' },
-          ],
+          id: 'house_purpose', type: 'checks', label: 'まんまるハウスの利用目的', required: true,
+          options: opts([['inspection', '視察・相談'], ['experience', '体験'], ['sightseeing', '観光'], ['other', 'その他']]),
         },
-        { id: 'stay_note', type: 'textarea', label: 'ご希望やご質問', rows: 4 },
+        guestsField('利用', '利用者'),
+        stayNoteField,
       ],
     },
     {
@@ -246,11 +283,12 @@ export const SCHEMA: Schema = {
         },
         { id: 'how_known_other', type: 'text', label: 'その他のきっかけ', show: { all: [notOther, { field: 'how_known', includes: 'other' }] } },
         {
-          id: 'sec_pamphlet', type: 'section', label: '資料の郵送',
+          id: 'sec_mail', type: 'section', label: '資料の郵送',
           fields: [
-            { id: 'pamphlet', type: 'checkbox', label: '観光パンフレットなどの資料を、郵送で受け取りたい' },
+            { id: 'mail_brochures', type: 'checkbox', label: '観光パンフレットなどの資料を、郵送で受け取りたい' },
+            { id: 'mail_consultation', type: 'checkbox', label: '当フォームでのご相談内容に関する資料を、郵送で受け取りたい' },
             {
-              id: 'pamphlet_address', type: 'text', label: '郵送先の住所', show: wantsPamphlet, required: wantsPamphlet,
+              id: 'mail_address', type: 'text', label: '郵送先の住所', show: wantsMail, required: wantsMail,
               autoComplete: 'street-address', hint: '郵便番号と、都道府県からご記入ください。',
             },
           ],

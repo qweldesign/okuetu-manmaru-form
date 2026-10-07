@@ -64,17 +64,22 @@ function walk(fields: Field[], eff: Values, parentVisible: boolean, cb: (f: Fiel
 /**
  * 非表示になった項目の値を取り除いた「有効な値」を求める。
  * 非表示項目に残った古い値が他の条件に影響しないよう、結果が安定するまで繰り返す。
+ * 同じ id の項目が複数のステップにある場合（例：ワークステイとまんまるハウスの日程）は、
+ * どれか1つでも表示されていれば値を残す。
  */
 export function effectiveValues(schema: Schema, values: Values): Values {
   let eff: Values = { ...values };
   for (let i = 0; i < 8; i++) {
     const next: Values = { ...values };
+    const visibleIds = new Set<string>();
+    const hiddenIds = new Set<string>();
     for (const step of schema.steps) {
       const stepVisible = evalCond(step.show, eff);
       walk(step.fields, eff, stepVisible, (f, visible) => {
-        if (!visible) delete next[f.id];
+        (visible ? visibleIds : hiddenIds).add(f.id);
       });
     }
+    for (const id of hiddenIds) if (!visibleIds.has(id)) delete next[id];
     const prevKeys = Object.keys(eff);
     const same = Object.keys(next).length === prevKeys.length && prevKeys.every((k) => k in next);
     eff = next;
