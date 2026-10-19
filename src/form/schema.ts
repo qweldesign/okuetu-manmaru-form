@@ -27,8 +27,8 @@ const topic = (t: string): Condition => ({ field: 'support_topics', includes: t 
 
 export const PURPOSES = opts([
   ['relocation', 'あなた仕立ての移住相談', '住まい、仕事、暮らしのことなど。まだ迷っている段階でも大丈夫です', 'オンライン相談も可'],
-  ['workstay', '越前大野でワークステイ', '地域に入り込んで、暮らしながら働く体験'],
-  ['house', 'まんまるハウスのご利用', '視察・相談・体験・観光のための滞在'],
+  ['workstay', '越前おおのでワークステイ', '地域に入り込んで、暮らしながら働き、大野を知るきっかけに'],
+  ['house', 'まんまるハウスのご利用', '相談・体験・観光・お試し暮らしのための滞在'],
   ['other', 'ちょっとしたご質問・その他', 'ひとこと聞いてみたいこと、サイトへのご意見など。お気軽にどうぞ'],
 ]);
 
@@ -234,7 +234,7 @@ export const SCHEMA: Schema = {
     {
       id: 'workstay',
       short: 'ワークステイ',
-      title: '越前大野でワークステイ',
+      title: '越前おおのでワークステイ',
       lead: '滞在のご希望日程と、一緒に参加される方について教えてください。',
       show: hasWork,
       rules: [stayDateOrder],
